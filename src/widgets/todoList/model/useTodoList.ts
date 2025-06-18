@@ -5,9 +5,9 @@ import {Task} from "@/entities";
 import { v4 as uuidv4 } from 'uuid'
 import {useLocalTasksList} from "@/widgets/todoList/model/useLocalTasksList";
 
-
 export const useTodoList = () => {
-    const {loadTasksFromLocalStorage} = useLocalTasksList()
+    const {loadTasksFromLocalStorage, saveTasksToLocalStorage} = useLocalTasksList()
+    const {fetchArchive} = useFetchTaskArchive()
 
     const completedTasks = ref<Task[]>([])
     const activeTasks = ref<Task[]>([])
@@ -25,6 +25,10 @@ export const useTodoList = () => {
         active: false,
         title: ""
     })
+
+    const saveToLocal = () => {
+        saveTasksToLocalStorage(completedTasks.value, activeTasks.value)
+    }
 
 
     const showMore = (taskList: Ref<Task[]>, count: Ref<number>) => {
@@ -58,41 +62,8 @@ export const useTodoList = () => {
 
     const deleteTask = (taskList: Ref<Task[]>, index: number) => {
         taskList.value.splice(index, 1)
+        saveToLocal()
     }
-
-    const switchTaskStatus = (task: Task, index: number, from: Ref<Task[]>, to: Ref<Task[]>) => {
-        to.value.unshift({
-            ...task,
-            completed: !task.completed
-        })
-        from.value.splice(index, 1)
-    }
-
-    const moveToCompleted = (task: Task, index: number) => {
-        switchTaskStatus(task, index, activeTasks, completedTasks)
-    }
-
-    const moveToActive = (task: Task, index: number) => {
-        switchTaskStatus(task, index, completedTasks, activeTasks)
-    }
-
-    const addNewTaskToList = () => {
-        if (newTask.value.title.trim()) {
-            activeTasks.value.unshift({
-                userId: 1,
-                id: uuidv4(),
-                title: newTask.value.title,
-                completed: false
-            })
-        }
-        newTask.value.active = false
-        newTask.value.title = ""
-    }
-
-    const addTask = () => {
-        newTask.value.active = true
-    }
-
 
     const deleteFromActive = (index: number) => {
         deleteTask(activeTasks, index)
@@ -104,11 +75,44 @@ export const useTodoList = () => {
         completedTaskCount.value = Math.max(Math.min(completedTaskCount.value, completedTasks.value.length), 3)
     }
 
+    const switchTaskStatus = (task: Task, index: number, from: Ref<Task[]>, to: Ref<Task[]>) => {
+        to.value.unshift({
+            ...task,
+            completed: !task.completed
+        })
+        from.value.splice(index, 1)
+        saveToLocal()
+    }
 
-    const {fetchArchive} = useFetchTaskArchive()
+    const moveToCompleted = (task: Task, index: number) => {
+        switchTaskStatus(task, index, activeTasks, completedTasks)
+    }
+
+    const moveToActive = (task: Task, index: number) => {
+        switchTaskStatus(task, index, completedTasks, activeTasks)
+    }
+
+    const addNewTaskToList = () => {
+        const newTaskTitle = newTask.value.title.trim()
+        if (newTaskTitle) {
+            activeTasks.value.unshift({
+                userId: 1,
+                id: uuidv4(),
+                title: newTaskTitle,
+                completed: false
+            })
+        }
+        newTask.value.active = false
+        newTask.value.title = ""
+        saveToLocal()
+    }
+
+    const addTask = () => {
+        newTask.value.active = true
+    }
+
 
     onMounted(async () => {
-
         const tasksFromStore = loadTasksFromLocalStorage()
 
         if (tasksFromStore) {
@@ -129,6 +133,7 @@ export const useTodoList = () => {
 
         completedTasks.value = completed
         activeTasks.value = active
+        saveToLocal()
     });
 
     return {
@@ -146,6 +151,7 @@ export const useTodoList = () => {
         moveToActive,
         addNewTaskToList,
         showLessActive,
-        showLessCompleted
+        showLessCompleted,
+        saveToLocal
     }
 }

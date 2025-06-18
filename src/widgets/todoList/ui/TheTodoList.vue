@@ -3,8 +3,6 @@ import {useTodoList} from "@/widgets/todoList/model/useTodoList";
 import TheTask from "@/widgets/todoList/ui/TheTask.vue";
 import {onClickOutside} from '@vueuse/core'
 import {useTemplateRef} from "vue";
-import {watch} from "vue";
-import {useLocalTasksList} from "@/widgets/todoList/model/useLocalTasksList";
 
 const {
   completedTasks,
@@ -22,25 +20,14 @@ const {
   moveToCompleted,
   moveToActive,
   addNewTaskToList,
+  saveToLocal
 } = useTodoList()
-
-const {saveTasksToLocalStorage} = useLocalTasksList()
 
 const target = useTemplateRef<HTMLElement>('textarea')
 
-
 onClickOutside(target, () => {
-  addNewTaskToList(newTask)
+  addNewTaskToList()
 })
-
-watch(
-    [completedTasks, activeTasks],
-    ([newCompleted, newActive]) => {
-      saveTasksToLocalStorage(newCompleted, newActive)
-    },
-    { deep: true }
-)
-
 </script>
 
 <template>
@@ -48,7 +35,9 @@ watch(
     <div class="todoList__task-block">
       <div class="todoList__header-block">
         <h2 class="todoList__header">Active tasks</h2>
-        <Button @click="addTask" :disabled="newTask.active">Add task</Button>
+        <Button
+            @click="addTask" :disabled="newTask.active">Add task
+        </Button>
       </div>
       <div class="todoList__task-list">
            <Textarea
@@ -57,7 +46,7 @@ watch(
                v-autofocus
                ref="textarea"
                style="resize: none"
-               @keydown.enter="addNewTaskToList(newTask)"
+               @keydown.enter="addNewTaskToList"
                rows="3" fluid
            />
         <div
@@ -65,7 +54,11 @@ watch(
             class="todoList__task"
         >
           <Button @click="moveToCompleted(task, index)" icon="pi pi-check" size="small" variant="text"></Button>
-          <TheTask v-model="task.title" @empty="deleteFromActive(index)"/>
+          <TheTask
+              v-model="task.title"
+              @empty="deleteFromActive(index)"
+              @new="saveToLocal"
+          />
           <Button @click="deleteFromActive(index)" icon="pi pi-trash" size="small" severity="secondary"/>
         </div>
       </div>
@@ -87,6 +80,7 @@ watch(
           <TheTask
               v-model="task.title"
               @empty="deleteFromCompleted(index)"
+              @new="saveToLocal"
               class="todoList__task-completed"
           />
           <Button @click="deleteFromCompleted(index)" icon="pi pi-trash" size="small" severity="secondary"/>
@@ -170,5 +164,4 @@ watch(
     }
   }
 }
-
 </style>

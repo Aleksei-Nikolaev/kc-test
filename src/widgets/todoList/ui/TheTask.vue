@@ -5,9 +5,10 @@ import {onClickOutside} from '@vueuse/core'
 const target = useTemplateRef<HTMLElement>('input')
 
 const emit = defineEmits<{
-  (e: 'empty'): void
+  (e: "empty" | "new"): void
 }>()
-const model = defineModel()
+
+const model = defineModel<string>()
 
 const active = ref(false)
 
@@ -16,9 +17,9 @@ const toggle = () => {
 }
 
 const closeTextArea = () => {
-  if (model.value.trim() === '') {
-    emit('empty')
-  }
+  if (!model.value) return
+  const action = ((model.value.trim() === '') ? 'empty' : "new")
+  emit(action)
   toggle()
 }
 
@@ -66,7 +67,9 @@ onClickOutside(target, () => {
       cursor: pointer;
     }
   }
+
   .task-completed .task__description {
-font-weight: bold  }
+    font-weight: bold
+  }
 }
 </style>

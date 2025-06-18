@@ -1,6 +1,5 @@
 import {Task} from "@/entities";
 
-
 export const useLocalTasksList = () => {
     const saveTasksToLocalStorage = (completed: Task[], active: Task[]) => {
         try {
@@ -34,4 +33,3 @@ export const useLocalTasksList = () => {
         loadTasksFromLocalStorage
     }
 }
-
